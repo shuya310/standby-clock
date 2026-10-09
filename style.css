@@ -1,0 +1,148 @@
+/* ============================================================
+   スタンバイ時計
+   --d が「時・分の数字の大きさ」。ほかの寸法はすべて --d の比率で決まるので、
+   画面サイズ・縦横が変わっても全体が同じ見た目のまま伸び縮みする。
+   ============================================================ */
+
+:root {
+  /* 数字の大きさ：画面幅の27% と 画面高さの50% の小さいほう */
+  --d: min(27vw, 50vh);
+
+  /* 昼（白） */
+  --fg: #F2F2F2;   /* 時・分・秒 */
+  --dim: #ADADAD;  /* コロン（日付より少し明るい） */
+  --sub: #9A9A9A;  /* 日付・曜日 */
+  --bg: #000000;
+}
+
+/* 夜（赤）：端末がダークモードのとき */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-mode="day"]) {
+    --fg: #E5392E;
+    --dim: #C93B31;
+    --sub: #B8322A;
+  }
+}
+/* タップで「夜」に固定したとき */
+:root[data-mode="night"] {
+  --fg: #E5392E;
+  --dim: #C93B31;
+  --sub: #B8322A;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  background: var(--bg);
+  overflow: hidden;
+  overscroll-behavior: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+}
+
+.clock {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: none;
+}
+
+/* ---------- 時刻 ---------- */
+.time {
+  display: flex;
+  align-items: baseline;
+  font-family: "DIN Condensed", "D-DIN Condensed", "Barlow Condensed", sans-serif;
+  font-weight: 500;
+  line-height: 1;
+  color: var(--fg);
+  transition: color 0.6s ease;
+}
+
+.pair {
+  display: flex;
+  align-items: baseline;
+  gap: calc(var(--d) * 0.03);           /* 数字同士の間隔 */
+}
+
+/* 1文字ずつ同じ幅の箱に入れて、数字が変わっても位置がずれないようにする */
+.digit {
+  display: block;
+  width: calc(var(--d) * 0.46);
+  text-align: center;
+  font-size: var(--d);
+  /* 数字の上下の余白を切り落とし、数字そのものの高さで中央に置く */
+  text-box: trim-both cap alphabetic;
+}
+
+/* 秒は時・分の半分の大きさ */
+.seconds {
+  gap: calc(var(--d) * 0.015);
+  margin-left: calc(var(--d) * 0.093);
+}
+.seconds .digit {
+  width: calc(var(--d) * 0.23);
+  font-size: calc(var(--d) * 0.5);
+}
+
+/* ---------- コロン：数字の高さの 28% と 72% の位置に点を置く ---------- */
+.colon {
+  position: relative;
+  align-self: stretch;
+  width: calc(var(--d) * 0.1);
+  margin: 0 calc(var(--d) * 0.08);
+}
+.dot {
+  position: absolute;
+  left: 0;
+  width: calc(var(--d) * 0.1);
+  height: calc(var(--d) * 0.1);
+  border-radius: calc(var(--d) * 0.013);
+  background: var(--dim);
+  transform: translateY(-50%);
+  transition: background-color 0.6s ease;
+}
+.dot:first-child { top: 28%; }
+.dot:last-child  { top: 72%; }
+
+/* ---------- 日付・曜日：時刻の下に置く（時刻の中心は画面の中央のまま） ---------- */
+.date {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(50% + var(--d) * 0.52);
+  margin: 0;
+  text-align: center;
+  font-family: "Zen Kaku Gothic New", "Hiragino Sans", sans-serif;
+  font-weight: 500;
+  font-size: max(14px, calc(var(--d) * 0.12));
+  letter-spacing: 0.1em;
+  color: var(--sub);
+  transition: color 0.6s ease;
+}
+
+/* ---------- 切り替え時の表示 ---------- */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(env(safe-area-inset-bottom) + 24px);
+  transform: translateX(-50%);
+  padding: 8px 18px;
+  border-radius: 999px;
+  font-family: "Zen Kaku Gothic New", "Hiragino Sans", sans-serif;
+  font-size: 14px;
+  letter-spacing: 0.08em;
+  color: var(--sub);
+  border: 1px solid currentColor;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s ease;
+}
+.toast.show { opacity: 0.9; }
